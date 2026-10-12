@@ -1,0 +1,95 @@
+{
+  "$comment": "A mock Jira project, so you can try pulling without credentials. Epics group stories through `epic`. A real Jira returns the same shape from the jira reader in server.mjs.",
+  "kind": "jira",
+  "name": "Jira",
+  "browseUrl": "https://example.atlassian.net/browse/",
+  "items": [
+    {
+      "id": "WB-100",
+      "type": "Epic",
+      "title": "Workbench Web: review changes in the browser",
+      "description": "Let people review what a feature's session changed without leaving Workbench Web: a diff view, per-file navigation and a way to send review notes back to the session.\n\nOut of scope: committing or pushing from the browser.",
+      "status": "In Progress",
+      "labels": [
+        "workbench-web"
+      ]
+    },
+    {
+      "id": "WB-101",
+      "type": "Story",
+      "epic": "WB-100",
+      "title": "Show the project's git diff next to the transcript",
+      "description": "Add a 'Changes' tab next to the transcript that shows `git diff` for the project, refreshed after each turn. Read-only is fine.\n\nAcceptance criteria:\n- The tab shows added and removed lines with colour and line numbers.\n- It refreshes when a turn ends.\n- An empty diff says 'No changes'.",
+      "status": "To Do",
+      "labels": [
+        "workbench-web"
+      ]
+    },
+    {
+      "id": "WB-102",
+      "type": "Story",
+      "epic": "WB-100",
+      "title": "Jump between changed files in the diff view",
+      "description": "List the changed files above the diff; clicking one scrolls to it.\n\nAcceptance criteria:\n- Files show added/removed line counts.\n- Works at phone width.",
+      "status": "To Do",
+      "labels": [
+        "workbench-web"
+      ]
+    },
+    {
+      "id": "WB-103",
+      "type": "Story",
+      "epic": "WB-100",
+      "title": "Send a review note on a diff line to the session",
+      "description": "Clicking a diff line opens a small note box; sending it posts a message to the feature's session quoting the file, line and note.\n\nAcceptance criteria:\n- The message includes file path and line number.\n- Works whether the session is running or stopped (stopped sessions resume).",
+      "status": "Backlog",
+      "labels": [
+        "workbench-web"
+      ]
+    },
+    {
+      "id": "WB-110",
+      "type": "Epic",
+      "title": "Landing site polish",
+      "description": "Small improvements to the Workbench landing page in site/ before it is shared more widely.",
+      "status": "To Do",
+      "labels": [
+        "site"
+      ]
+    },
+    {
+      "id": "WB-111",
+      "type": "Story",
+      "epic": "WB-110",
+      "title": "Add a light/dark theme toggle",
+      "description": "The landing page in site/ follows the OS colour scheme only. Add a small toggle in the nav that remembers the choice in localStorage and falls back to the OS setting. Keep it dependency-free.\n\nAcceptance criteria:\n- Works at desktop and phone widths.\n- No flash of the wrong theme on load.",
+      "status": "To Do",
+      "labels": [
+        "site"
+      ]
+    },
+    {
+      "id": "WB-112",
+      "type": "Story",
+      "epic": "WB-110",
+      "title": "Add an FAQ section",
+      "description": "Add an FAQ to site/index.html answering: Does it need an API key? Where is agent state stored? Can teammates share features? Use <details> elements and match the existing card style.",
+      "status": "To Do",
+      "labels": [
+        "site",
+        "docs"
+      ]
+    },
+    {
+      "id": "WB-120",
+      "type": "Story",
+      "title": "Auto-approve read-only tool requests",
+      "description": "Use the policy hook in workbench-web/policy.mjs to auto-approve clearly safe requests (read-only git commands to start) and still ask for anything uncertain.\n\nAcceptance criteria:\n- Denied and uncertain requests still reach the browser.\n- Every automatic decision is shown in the transcript.",
+      "status": "To Do",
+      "labels": [
+        "workbench-web",
+        "permissions"
+      ]
+    }
+  ]
+}

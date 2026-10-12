@@ -1,0 +1,21 @@
+{
+  "id": "wb-110",
+  "createdAt": "2026-10-09T21:38:45.882Z",
+  "status": "active",
+  "context": [],
+  "workflows": [],
+  "description": "Small improvements to the Workbench landing page in site/ before it is shared more widely.",
+  "title": "Landing site polish",
+  "experience": "garage",
+  "remote": {
+    "id": "WB-110",
+    "type": "Epic",
+    "epic": null,
+    "url": "https://example.atlassian.net/browse/WB-110",
+    "status": "To Do",
+    "labels": [
+      "site"
+    ]
+  },
+  "updatedAt": "2026-10-09T21:38:45.883Z"
+}

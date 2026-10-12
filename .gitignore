@@ -1,0 +1,8 @@
+.claude/workbench-web.local.json
+.claude/workbench-web.runtime.json
+.claude/settings.local.json
+node_modules/
+*.log
+.DS_Store
+# Local state from running Claude Code inside a subfolder
+/*/.claude/

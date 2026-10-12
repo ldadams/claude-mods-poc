@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workbench</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>window.WB = { token: "__TOKEN__", project: "__PROJECT__" }</script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <div class="brand"><span class="mark" aria-hidden="true"></span>Workbench<a class="docs-link" href="/docs/" target="_blank" rel="noopener">Docs</a></div>
+        <div class="project" id="project" title=""></div>
+      </div>
+      <form class="new-feature" id="newFeature">
+        <input id="newTitle" placeholder="New feature title…" autocomplete="off" aria-label="New feature title">
+        <button type="submit" class="btn small">Add</button>
+      </form>
+      <div class="new-target" id="newTarget"></div>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tab active" id="tabFeatures" aria-selected="true">Features</button>
+        <button type="button" role="tab" class="tab" id="tabRemote" aria-selected="false">Remote</button>
+      </div>
+      <div class="side-summary" id="summary"></div>
+      <nav class="feature-list" id="featureList" aria-label="Features"></nav>
+      <div class="remote-list hidden" id="remoteList" aria-label="Remote issues"></div>
+      <form class="new-exp" id="newExp">
+        <input id="newExpTitle" placeholder="+ New experience" autocomplete="off" aria-label="New experience title">
+      </form>
+      <div class="side-foot">
+        <label class="toggle"><input type="checkbox" id="showArchived"> Show archived</label>
+        <button class="link" id="notifyBtn" type="button">Enable notifications</button>
+      </div>
+    </aside>
+
+    <main class="main" id="main">
+      <div class="empty" id="empty">
+        <h1>Pick a feature</h1>
+        <p>Each feature runs its own Claude session. Start one, then watch it work, answer its questions and approve its tools here.</p>
+      </div>
+
+      <section class="experience hidden" id="experience">
+        <header class="feature-head">
+          <button class="icon-btn menu" type="button" aria-label="Show features" data-menu>☰</button>
+          <div class="title-wrap">
+            <div class="crumb">Experience</div>
+            <input class="title-input" id="expTitle" aria-label="Experience title">
+            <div class="meta-row" id="expMeta"></div>
+          </div>
+          <div class="actions">
+            <label class="toggle" title="New sessions in this experience start in plan mode; you approve the plan before Claude builds"><input type="checkbox" id="expPlanFirst"> Plan first</label>
+            <button class="btn" id="expStartAll" type="button">Start ready features</button>
+            <details class="more">
+              <summary class="btn ghost" aria-label="More actions">⋯</summary>
+              <div class="menu-pop"><button type="button" id="expDelete" class="danger">Delete experience</button></div>
+            </details>
+          </div>
+        </header>
+        <div class="exp-body">
+          <label class="field">Shared context
+            <textarea id="expDesc" rows="4" placeholder="What ties these features together? Goals, constraints, links. Every feature in this experience gets this in its brief."></textarea>
+          </label>
+          <div class="row end"><button class="btn small" id="expSave" type="button">Save</button></div>
+          <label class="field">Remote labels
+            <input id="expLabels" placeholder="docs, site  (issues with these labels are grouped here and pulled into this experience)" autocomplete="off" aria-label="Remote labels">
+          </label>
+          <div class="exp-grid" id="expGrid"></div>
+          <form class="ctx-add" id="expAdd">
+            <input id="expAddTitle" placeholder="Add a feature to this experience…" autocomplete="off" aria-label="New feature in this experience">
+            <button class="btn small" type="submit">Add feature</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="feature hidden" id="feature">
+        <header class="feature-head">
+          <button class="icon-btn menu" type="button" aria-label="Show features" data-menu>☰</button>
+          <div class="title-wrap">
+            <div class="crumb"><a href="#" id="crumbLink"></a>
+              <select id="expSelect" aria-label="Move to experience"></select>
+            </div>
+            <input class="title-input" id="titleInput" aria-label="Feature title">
+            <div class="meta-row">
+              <span class="pill" id="statusPill"></span>
+              <span class="pill hidden" id="phasePill"></span>
+              <span class="approach hidden" id="approachBox"><label>Approach <select id="approachSelect"><option value="auto">as recommended</option><option value="plan">plan first</option><option value="direct">just do it</option></select></label> <span class="muted" id="approachHint"></span></span>
+              <span class="muted" id="costLabel"></span>
+              <span class="muted mono" id="sessionLabel"></span>
+            </div>
+          </div>
+          <div class="actions">
+            <label class="mode">Mode
+              <select id="modeSelect">
+                <option value="default">Ask before acting</option>
+                <option value="acceptEdits">Auto-accept edits</option>
+                <option value="plan">Plan only</option>
+                <option value="auto">Auto</option>
+              </select>
+            </label>
+            <button class="btn" id="startBtn" type="button">Start</button>
+            <button class="btn hidden" id="approvePlanBtn" type="button" title="Switch back to your normal mode and let Claude build the plan">Approve plan</button>
+            <button class="btn ghost" id="interruptBtn" type="button">Interrupt</button>
+            <button class="btn ghost" id="stopBtn" type="button">Stop</button>
+            <details class="more">
+              <summary class="btn ghost" aria-label="More actions">⋯</summary>
+              <div class="menu-pop">
+                <button type="button" id="archiveBtn">Archive</button>
+                <button type="button" id="resetBtn" class="danger">Forget session</button>
+              </div>
+            </details>
+          </div>
+        </header>
+
+        <details class="brief" id="brief">
+          <summary><span>Brief</span><span class="muted" id="briefHint"></span></summary>
+          <div class="brief-body">
+            <label class="field">Description
+              <textarea id="descInput" rows="4" placeholder="What should Claude build? What does done look like?"></textarea>
+            </label>
+            <div class="row end"><button class="btn small" id="saveDesc" type="button">Save description</button></div>
+            <div class="field">Context
+              <ul class="ctx-list" id="ctxList"></ul>
+              <form class="ctx-add" id="ctxAdd">
+                <select id="ctxType" aria-label="Context type">
+                  <option value="file">File</option>
+                  <option value="command">Command</option>
+                  <option value="url">URL</option>
+                  <option value="note">Note</option>
+                </select>
+                <input id="ctxValue" placeholder="src/app.ts, git log -5, https://…, or a note" autocomplete="off" aria-label="Context value">
+                <button class="btn small" type="submit">Add</button>
+              </form>
+              <p class="hint">Context is read when you press Start. Commands run on your machine, so check ones you didn't write.</p>
+            </div>
+          </div>
+        </details>
+
+        <div class="transcript" id="transcript" aria-live="polite"></div>
+
+        <div class="workflows" id="workflowBar" aria-label="Workflows"></div>
+        <form class="composer" id="composer">
+          <textarea id="msgInput" rows="2" placeholder="Message Claude about this feature…  (Enter to send, Shift+Enter for a new line)" aria-label="Message"></textarea>
+          <button class="btn" type="submit" id="sendBtn">Send</button>
+        </form>
+      </section>
+    </main>
+  </div>
+  <div class="toasts" id="toasts" aria-live="assertive"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

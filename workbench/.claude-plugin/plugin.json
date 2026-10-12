@@ -1,0 +1,9 @@
+{
+  "name": "workbench",
+  "version": "0.6.0",
+  "description": "Features (units of work shared through git), Experiences (groups with shared context), a shared workflow registry, Context per feature, and one Claude session per feature run by Workbench Web, so the pane and the browser drive the same in-flight work.",
+  "author": {
+    "name": "ldadams"
+  },
+  "types": "./types/index.d.ts"
+}

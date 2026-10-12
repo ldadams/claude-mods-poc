@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workbench Architecture</title>
+  <meta name="description" content="How Workbench works: a feature's lifecycle from creation to turn end, the hooks it runs on, the observer that watches every agent, and where the Laya decision model judges the work.">
+  <link rel="stylesheet" href="styles.css?v=0.4.0-1">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>workbench</a>
+    <nav>
+      <a href="#lifecycle">Lifecycle</a>
+      <a href="#layout">Modules</a>
+      <a href="#observer">Observer</a>
+      <a href="#hooks">Hooks</a>
+      <a href="#remotes">Remotes</a>
+      <a href="#laya">Laya</a>
+      <a class="btn btn-sm" href="index.html">Home</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <section class="doc-head">
+      <p class="eyebrow">Workbench v0.6.0 · architecture</p>
+      <h1>How Workbench works</h1>
+      <p class="lede">A feature moves through six stages, from the moment you create it to the end of its agent's turn. Workbench hooks into Claude Code at each one, a local Laya model can judge the work along the way, and one observer tells you when any agent needs you.</p>
+    </section>
+
+    <section id="lifecycle">
+      <h2>A feature's lifecycle</h2>
+      <div class="diagram-wrap">
+        <svg class="diagram" viewBox="0 0 960 430" role="img" aria-labelledby="life-title life-desc">
+          <title id="life-title">A feature's lifecycle</title>
+          <desc id="life-desc">Six stages: feature (written, or pulled from Jira or GitHub), approach, start, work, plan or ask, and turn end, with a loop from turn end back to work. Under each stage: where Workbench hooks into Claude Code, and what Laya asks when decisions are on. Plan, ask and turn end feed the observer, which tells you through the pane, status line, toasts and notifications.</desc>
+          <defs>
+            <marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path class="d-head" d="M0,0 L10,5 L0,10 z"/>
+            </marker>
+          </defs>
+
+          <!-- the loop back into the work -->
+          <path class="d-line" d="M885 34 C885 20 561 20 561 32" fill="none" marker-end="url(#arrL)"/>
+          <text class="d-lbl" x="604" y="12">your answer · a follow-up · your next message</text>
+
+          <!-- stages -->
+          <rect class="d-box" x="0" y="34" width="150" height="70" rx="10"/>
+          <text class="d-t" x="12" y="58">1 · Feature</text>
+          <text class="d-s" x="12" y="78">you write it, or pull</text>
+          <text class="d-s" x="12" y="94">it from Jira or GitHub</text>
+          <line class="d-line" x1="151" y1="69" x2="160" y2="69" marker-end="url(#arrL)"/>
+
+          <rect class="d-box" x="162" y="34" width="150" height="70" rx="10"/>
+          <text class="d-t" x="174" y="58">2 · Approach</text>
+          <text class="d-s" x="174" y="78">plan it first, or</text>
+          <text class="d-s" x="174" y="94">just do it?</text>
+          <line class="d-line" x1="313" y1="69" x2="322" y2="69" marker-end="url(#arrL)"/>
+
+          <rect class="d-box" x="324" y="34" width="150" height="70" rx="10"/>
+          <text class="d-t" x="336" y="58">3 · Start</text>
+          <text class="d-s" x="336" y="78">the brief goes to</text>
+          <text class="d-s" x="336" y="94">the feature's runner</text>
+          <line class="d-line" x1="475" y1="69" x2="484" y2="69" marker-end="url(#arrL)"/>
+
+          <rect class="d-box" x="486" y="34" width="150" height="70" rx="10"/>
+          <text class="d-t" x="498" y="58">4 · Work</text>
+          <text class="d-s" x="498" y="78">edits and commands,</text>
+          <text class="d-s" x="498" y="94">in session or on web</text>
+          <line class="d-line" x1="637" y1="69" x2="646" y2="69" marker-end="url(#arrL)"/>
+
+          <rect class="d-box" x="648" y="34" width="150" height="70" rx="10"/>
+          <text class="d-t" x="660" y="58">5 · Plan · ask</text>
+          <text class="d-s" x="660" y="78">a plan to approve,</text>
+          <text class="d-s" x="660" y="94">or a question</text>
+          <line class="d-line" x1="799" y1="69" x2="808" y2="69" marker-end="url(#arrL)"/>
+
+          <rect class="d-box" x="810" y="34" width="150" height="70" rx="10"/>
+          <text class="d-t" x="822" y="58">6 · Turn end</text>
+          <text class="d-s" x="822" y="78">done, or</text>
+          <text class="d-s" x="822" y="94">your turn</text>
+
+          <!-- where Workbench hooks in -->
+          <text class="d-col" x="0" y="130">WHERE WORKBENCH HOOKS IN</text>
+          <g>
+            <rect class="d-box d-event" x="0" y="140" width="150" height="70" rx="10"/>
+            <text class="d-s d-mono" x="12" y="162">command.run</text>
+            <text class="d-s d-mono" x="12" y="178">ui.render</text>
+            <text class="d-s" x="12" y="196">/feature, the pane</text>
+
+            <rect class="d-box d-event" x="162" y="140" width="150" height="70" rx="10"/>
+            <text class="d-s d-mono" x="174" y="162">POST …/assess</text>
+            <text class="d-s" x="174" y="180">when you open a</text>
+            <text class="d-s" x="174" y="196">feature not started</text>
+
+            <rect class="d-box d-event" x="324" y="140" width="150" height="70" rx="10"/>
+            <text class="d-s d-mono" x="336" y="162">$.agent.spawn</text>
+            <text class="d-s" x="336" y="180">in session, or</text>
+            <text class="d-s d-mono" x="336" y="196">POST …/start (web)</text>
+
+            <rect class="d-box d-event" x="486" y="140" width="150" height="70" rx="10"/>
+            <text class="d-s d-mono" x="498" y="162">tool.call</text>
+            <text class="d-s" x="498" y="180">in session, or</text>
+            <text class="d-s d-mono" x="498" y="196">canUseTool (web)</text>
+
+            <rect class="d-box d-event" x="648" y="140" width="150" height="70" rx="10"/>
+            <text class="d-s d-mono" x="660" y="162">ExitPlanMode</text>
+            <text class="d-s d-mono" x="660" y="180">ask_user</text>
+            <text class="d-s d-mono" x="660" y="196">AskUserQuestion</text>
+
+            <rect class="d-box d-event" x="810" y="140" width="150" height="70" rx="10"/>
+            <text class="d-s d-mono" x="822" y="162">turn.complete</text>
+            <text class="d-s" x="822" y="180">in session, or the</text>
+            <text class="d-s" x="822" y="196">turn's result (web)</text>
+          </g>
+
+          <!-- what Laya asks -->
+          <text class="d-col" x="0" y="234">WHAT LAYA ASKS, WHEN DECISIONS ARE ON</text>
+          <g>
+            <rect class="d-box d-state" x="0" y="244" width="150" height="80" rx="10"/>
+            <text class="d-s" x="12" y="266">nothing yet: your</text>
+            <text class="d-s" x="12" y="282">standards are read</text>
+            <text class="d-s" x="12" y="298">at every later step</text>
+
+            <rect class="d-box d-agent" x="162" y="244" width="150" height="80" rx="10"/>
+            <text class="d-s" x="174" y="266">plan or direct?</text>
+            <text class="d-s" x="174" y="282">how big? how clear?</text>
+            <text class="d-s" x="174" y="298">API or data change?</text>
+            <text class="d-s" x="174" y="314">auth or payments?</text>
+
+            <rect class="d-box d-state" x="324" y="244" width="150" height="80" rx="10"/>
+            <text class="d-s" x="336" y="266">uses the approach:</text>
+            <text class="d-s" x="336" y="282">plan mode first,</text>
+            <text class="d-s" x="336" y="298">or straight to work</text>
+
+            <rect class="d-box d-agent" x="486" y="244" width="150" height="80" rx="10"/>
+            <text class="d-s" x="498" y="266">breaks a standard?</text>
+            <text class="d-s" x="498" y="282">read-only command?</text>
+            <text class="d-s" x="498" y="298">acts: deny it back</text>
+            <text class="d-s" x="498" y="314">to Claude, with why</text>
+
+            <rect class="d-box d-agent" x="648" y="244" width="150" height="80" rx="10"/>
+            <text class="d-s" x="660" y="266">plan: verified?</text>
+            <text class="d-s" x="660" y="282">in scope? standards?</text>
+            <text class="d-s" x="660" y="298">acts: send it back</text>
+            <text class="d-s" x="660" y="314">questions: never</text>
+
+            <rect class="d-box d-agent" x="810" y="244" width="150" height="80" rx="10"/>
+            <text class="d-s" x="822" y="266">claims checks that</text>
+            <text class="d-s" x="822" y="282">never ran? unfinished?</text>
+            <text class="d-s" x="822" y="298">acts: a follow-up,</text>
+            <text class="d-s" x="822" y="314">not a ping</text>
+          </g>
+
+          <!-- the observer -->
+          <line class="d-line" x1="723" y1="326" x2="723" y2="350" marker-end="url(#arrL)"/>
+          <line class="d-line" x1="885" y1="326" x2="885" y2="350" marker-end="url(#arrL)"/>
+          <rect class="d-band" x="0" y="352" width="960" height="70" rx="14"/>
+          <text class="d-col d-accent" x="16" y="376">THE OBSERVER TELLS YOU</text>
+          <text class="d-s" x="16" y="398">pane rows and cards · status line counts · toasts · notifications, for agents on both runners</text>
+          <text class="d-s" x="16" y="414"><tspan class="d-mono">n</tspan> jumps to whichever agent is waiting; every Laya judgment shows in its transcript as ◆ Laya</text>
+        </svg>
+      </div>
+      <p class="caption">Questions and plan approval are always yours. Laya acts only in "on" mode; in shadow mode it shows what it would do. On a narrow screen, scroll the diagrams sideways.</p>
+    </section>
+
+    <section id="layout">
+      <h2>One entry file, many modules</h2>
+      <p class="section-lede">Claude Code follows <code>$</code> only within the file that receives it, so <code>register.js</code> is the only file that touches it. For each hook call it wraps <code>$</code> in an adapter, <code>io</code>, and hands that to the handler. Every other module works through <code>io</code>.</p>
+      <div class="diagram-wrap">
+        <svg class="diagram" viewBox="0 0 960 300" role="img" aria-labelledby="lay-title lay-desc">
+          <title id="lay-title">Workbench module layout</title>
+          <desc id="lay-desc">Claude Code calls the hooks in register.js. register.js holds the atoms and the host adapter, and passes io to four groups: lifecycle.js, commands, pane and lib.</desc>
+          <defs>
+            <marker id="arr0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="d-head" d="M0,0 L10,5 L0,10 z"/>
+            </marker>
+          </defs>
+
+          <rect class="d-box" x="0" y="20" width="190" height="80" rx="10"/>
+          <text class="d-t" x="14" y="50">Claude Code</text>
+          <text class="d-s" x="14" y="70">raises events, gives each</text>
+          <text class="d-s" x="14" y="86">hook call its own $</text>
+
+          <line class="d-line" x1="192" y1="60" x2="248" y2="60" marker-end="url(#arr0)"/>
+          <text class="d-lbl" x="200" y="50">($, e, next)</text>
+
+          <rect class="d-box d-event" x="250" y="10" width="460" height="100" rx="10"/>
+          <text class="d-t d-mono" x="266" y="38">hooks/register.js</text>
+          <text class="d-s" x="266" y="60">declares the four atoms · host($) builds the io adapter</text>
+          <text class="d-s" x="266" y="78">on(event, ($, e, next) =&gt; handler(host($), e, next))</text>
+          <text class="d-s" x="266" y="96">the only file that touches $</text>
+
+          <line class="d-line" x1="480" y1="112" x2="480" y2="150" marker-end="url(#arr0)"/>
+          <text class="d-lbl" x="490" y="136">io</text>
+
+          <g transform="translate(0,160)">
+            <rect class="d-box" x="0" y="0" width="225" height="120" rx="10"/>
+            <text class="d-t d-mono" x="14" y="28">lifecycle.js</text>
+            <text class="d-s" x="14" y="50">session start: commands,</text>
+            <text class="d-s" x="14" y="66">ask_user tool, poll timer;</text>
+            <text class="d-s" x="14" y="82">resume; the brief added</text>
+            <text class="d-s" x="14" y="98">to every prompt</text>
+
+            <rect class="d-box" x="245" y="0" width="225" height="120" rx="10"/>
+            <text class="d-t d-mono" x="259" y="28">commands/</text>
+            <text class="d-s" x="259" y="50">one file per command:</text>
+            <text class="d-s" x="259" y="66">/workbench /wb /experience</text>
+            <text class="d-s" x="259" y="82">/feature /ctx /workflow</text>
+
+            <rect class="d-box" x="490" y="0" width="225" height="120" rx="10"/>
+            <text class="d-t d-mono" x="504" y="28">pane/</text>
+            <text class="d-s" x="504" y="50">render.js picks the view;</text>
+            <text class="d-s" x="504" y="66">kit.js shared pieces; one</text>
+            <text class="d-s" x="504" y="82">file per view, with the</text>
+            <text class="d-s" x="504" y="98">ask cards and transcript</text>
+
+            <rect class="d-box d-agent" x="735" y="0" width="225" height="120" rx="10"/>
+            <text class="d-t d-mono" x="749" y="28">lib/</text>
+            <text class="d-s" x="749" y="50">features, context, brief,</text>
+            <text class="d-s" x="749" y="66">workflows, remote sources;</text>
+            <text class="d-s" x="749" y="82">runners and the observer:</text>
+            <text class="d-s" x="749" y="98">session-runner, sessions, web</text>
+          </g>
+        </svg>
+      </div>
+      <p class="caption">The engine also requires atoms to be read in the file that declares them, so the four atoms live in <code>register.js</code> and other modules name them by key: <code>io.read(sessions)</code>.</p>
+    </section>
+
+    <section id="observer">
+      <h2>The observer: two inputs, one state</h2>
+      <p class="section-lede">The observer is not one hook. Agents in your session are heard through events; agents in Workbench Web through the poll. Both write each feature's record, tagged with its runner, into the same <code>sessions</code> atom, and everything you see is drawn from that atom.</p>
+      <div class="diagram-wrap">
+        <svg class="diagram" viewBox="0 0 960 300" role="img" aria-labelledby="obs-title obs-desc">
+          <title id="obs-title">The observer</title>
+          <desc id="obs-desc">The tool.call and turn.complete hooks feed in-session agents' records, and the poll timer feeds Workbench Web's, into one sessions atom. The pane, status line, toasts and notifications all read from it.</desc>
+          <defs>
+            <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="d-head" d="M0,0 L10,5 L0,10 z"/>
+            </marker>
+          </defs>
+
+          <text class="d-col" x="0" y="18">INPUTS</text>
+          <text class="d-col" x="380" y="18">STATE</text>
+          <text class="d-col" x="690" y="18">WHAT YOU SEE</text>
+
+          <rect class="d-box d-event" x="0" y="34" width="300" height="104" rx="10"/>
+          <text class="d-t" x="14" y="60">Runner "session": events</text>
+          <text class="d-s d-mono" x="14" y="82">tool.call (ask_user)</text>
+          <text class="d-s d-mono" x="14" y="100">turn.complete</text>
+          <text class="d-s" x="14" y="122">pushed by Claude Code as they happen</text>
+
+          <rect class="d-box d-event" x="0" y="168" width="300" height="104" rx="10"/>
+          <text class="d-t" x="14" y="194">Runner "web": a timer</text>
+          <text class="d-s d-mono" x="14" y="216">$.clock.every(1500) → GET /api/state</text>
+          <text class="d-s" x="14" y="238">the mod cannot hold a stream open,</text>
+          <text class="d-s" x="14" y="256">so it asks every 1.5 s</text>
+
+          <path class="d-line" d="M302 86 C340 86 340 150 378 150" fill="none" marker-end="url(#arr1)"/>
+          <path class="d-line" d="M302 220 C340 220 340 160 378 160" fill="none" marker-end="url(#arr1)"/>
+
+          <rect class="d-box d-agent" x="380" y="96" width="250" height="118" rx="10"/>
+          <text class="d-t d-mono" x="396" y="122">sessions atom</text>
+          <text class="d-s" x="396" y="144">one record per feature:</text>
+          <text class="d-s" x="396" y="162">runner · status · pending[]</text>
+          <text class="d-s" x="396" y="180">phase · mode · cost</text>
+          <text class="d-s" x="396" y="198">a write redraws the pane</text>
+
+          <line class="d-line" x1="632" y1="155" x2="688" y2="155" marker-end="url(#arr1)"/>
+
+          <rect class="d-box" x="690" y="34" width="270" height="238" rx="10"/>
+          <text class="d-t" x="704" y="62">Pane</text>
+          <text class="d-s" x="704" y="82">every agent, with · in session / · web</text>
+          <text class="d-t" x="704" y="118">Status line</text>
+          <text class="d-s" x="704" y="138">? 2 need your answer · ● 3 running</text>
+          <text class="d-t" x="704" y="174">n</text>
+          <text class="d-s" x="704" y="194">jumps to whichever is waiting</text>
+          <text class="d-t" x="704" y="230">Toasts and notifications</text>
+          <text class="d-s" x="704" y="250">the same, whichever runner</text>
+        </svg>
+      </div>
+      <p class="caption">A poll rewrites the web records and keeps the in-session ones, inside one atom update, so a hook that writes in between is never lost.</p>
+    </section>
+
+    <section id="hooks">
+      <h2>The hooks</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Event</th><th>Handler</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>session.start</code></td><td><code>lifecycle.js</code></td><td>Registers the commands and the <code>ask_user</code> tool, restores the focused feature, starts the 1.5 s poll.</td></tr>
+            <tr><td><code>classic.SessionStart</code></td><td><code>lifecycle.js</code></td><td>Restores the focused feature after <code>/clear</code>, a resume or a fork.</td></tr>
+            <tr><td><code>prompt.submit</code></td><td><code>lifecycle.js</code></td><td>Adds the focused feature's brief to every prompt.</td></tr>
+            <tr><td><code>command.run</code></td><td><code>commands/</code></td><td><code>/workbench</code>, <code>/wb</code>, <code>/experience</code>, <code>/feature</code>, <code>/ctx</code>, <code>/workflow</code>; agent actions go to the feature's runner.</td></tr>
+            <tr><td><code>tool.call</code> (<code>ask_user</code>)</td><td><code>lib/session-runner.js</code></td><td>An in-session agent asks you: marked needs-you, and told to end its turn.</td></tr>
+            <tr><td><code>tool.call</code> (any tool)</td><td><code>lib/decisions.js</code></td><td>An in-session agent's edit or command, judged by Laya; may be denied back to it.</td></tr>
+            <tr><td><code>turn.complete</code></td><td><code>lib/session-runner.js</code></td><td>An in-session agent's turn ended: your turn, checked by Laya first.</td></tr>
+            <tr><td><code>ui.render</code></td><td><code>pane/render.js</code></td><td>Draws the Workbench pane from the shared state.</td></tr>
+            <tr><td><code>$.clock.every</code> (timer)</td><td><code>lib/sessions.js</code></td><td>Polls Workbench Web for its sessions' state.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note after-grid"><strong>Workbench Web's own points</strong> are not Claude Code hooks: <code>canUseTool</code> (each tool request, with <code>policy.mjs</code> first and then Laya), the plan card, and each turn's result.</p>
+    </section>
+
+    <section id="remotes">
+      <h2>Remote trackers</h2>
+      <p class="section-lede">Workbench Web pulls features from Jira and GitHub Issues. Both are mocked in <code>workbench-web/remotes/</code>, so you can try it without credentials.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tracker</th><th>A group</th><th>An item</th><th>Pulled as</th></tr></thead>
+          <tbody>
+            <tr><td>Jira</td><td>Epic</td><td>Story, with its <code>epic</code></td><td><code>wb-101</code></td></tr>
+            <tr><td>GitHub Issues</td><td>Issue with sub-issues</td><td>Issue, with its <code>parent</code></td><td><code>github-42</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="points">
+        <li><strong>Pull an item or a whole group.</strong> A group's brief lists every item under it, read fresh when the session starts.</li>
+        <li><strong>Labels pick the experience.</strong> An item whose labels match an experience's <em>Remote labels</em> lands in it, from either tracker.</li>
+        <li><strong>Going live.</strong> Each tracker is one reader in <code>server.mjs</code>; make it fetch instead of reading the mock. In the Claude Code pane, <code>/feature remote</code> reads any MCP server (GitHub, Linear, Jira) from config.</li>
+      </ul>
+    </section>
+
+    <section id="laya">
+      <h2>Turning on Laya</h2>
+      <p class="section-lede">Laya is an open source decision model that runs inside Workbench Web, on your machine, with no key. It answers typed questions and never writes text: every message comes from your standards.</p>
+<pre><code><span class="dim">// .claude/workbench.json</span>
+{ "decisions": { "provider": "laya", "mode": "shadow" } }
+
+<span class="dim">// .claude/workbench-standards.json: exact rules, and sentences Laya judges</span>
+{
+  "rules":  [{ "id": "site-plain-html", "tools": ["Write", "Edit"], "field": "file_path",
+               "match": "(^|/)site/", "unless": "\\.(html|css|md)$",
+               "message": "site/ is plain HTML and CSS. Put this in an .html or .css file." }],
+  "judged": [{ "id": "site-no-frameworks", "text": "site/ stays plain HTML and CSS: no frameworks or bundlers.",
+               "appliesTo": ["edit", "plan"] }]
+}</code></pre>
+      <ul class="points">
+        <li><strong>Shadow first.</strong> Every judgment shows as a <code>◆ Laya</code> line and nothing acts. When its calls match yours, set <code>"mode": "on"</code>.</li>
+        <li><strong>Rules before judgment.</strong> Exact rules (paths, flags, key formats) are checked in code; Laya only judges the sentences.</li>
+        <li><strong>Off until you opt in.</strong> The weights are about 1.6 GB, so the repo ships with <code>"provider": "off"</code>; <code>./setup.sh --laya</code> downloads them once and switches it on.</li>
+        <li><strong>Or hosted.</strong> TypeSafe's hosted Jev speaks the same protocol, so it can replace Laya with <code>"provider": "http"</code>.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="index.html">workbench</a> · v0.6.0 · <a href="mods.html">What are mods?</a></p>
+  </footer>
+</body>
+</html>

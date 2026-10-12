@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What are Claude Code mods? · Workbench</title>
+  <meta name="description" content="Mods are small plugins of function hooks that change how Claude Code looks and behaves: panes, status lines, toasts, slash commands, and rules for tool calls and prompts.">
+  <link rel="stylesheet" href="styles.css?v=0.4.0-1">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>workbench</a>
+    <nav>
+      <a href="#what">What a mod is</a>
+      <a href="#build">What you can build</a>
+      <a href="#anatomy">Anatomy</a>
+      <a href="#run">Run one</a>
+      <a href="#faq">FAQ</a>
+      <a href="architecture.html">Architecture</a>
+      <a class="btn btn-sm" href="index.html">Home</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <section class="doc-head">
+      <p class="eyebrow">Claude Code · explainer</p>
+      <h1>What are Claude Code mods?</h1>
+      <p class="lede">A mod is a small plugin that changes how Claude Code itself looks and behaves. It can add a pane, a row above the prompt, a status line entry, a toast or a slash command, and it can watch, rewrite or block tool calls and prompts. Workbench is one.</p>
+      <p class="note"><strong>Early access:</strong> the mod API moves between Claude Code releases. The type declarations that ship with your build are the authority, and this page is the map.</p>
+    </section>
+
+    <section id="what">
+      <h2>What a mod is</h2>
+      <p class="section-lede">A mod is a Claude Code plugin whose hooks are functions, not shell commands. Settings hooks run a command and read its output. A mod's hooks run inside Claude Code, see each event as a typed value, and can change what happens next.</p>
+      <ol class="flow">
+        <li><strong>An event happens.</strong> Claude calls a tool, you submit a prompt, a session starts, or the interface draws a component.</li>
+        <li><strong>Your hook gets it.</strong> Every hook has the shape <code>($, e, next)</code>. <code>e</code> is the event's input. <code>$</code> is the engine interface: the UI, the session, the model, tools, files, a clock and a store.</li>
+        <li><strong>You decide.</strong> Call <code>next(e)</code> to carry on, <code>next({ ...e, ... })</code> to change what the rest sees, or return your own answer without calling <code>next</code>.</li>
+        <li><strong>Claude Code continues.</strong> Other mods run beneath yours, then Claude Code's own behavior, and the result comes back up through your hook.</li>
+      </ol>
+    </section>
+
+    <section id="build">
+      <h2>What you can build</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Panes</h3>
+          <p>A live view beside the conversation, opened with <code>$.ui.open()</code> and drawn by a <code>ui.render</code> hook. Workbench's <code>/workbench</code> pane is one.</p>
+        </article>
+        <article class="card">
+          <h3>A band above the prompt</h3>
+          <p>A row drawn just above where you type, for what's happening right now. Return nothing and it disappears.</p>
+        </article>
+        <article class="card">
+          <h3>Status lines and toasts</h3>
+          <p><code>$.ui.status(text)</code> sets a status line entry and <code>$.ui.toast(text)</code> raises a toast, from any hook.</p>
+        </article>
+        <article class="card">
+          <h3>Rules for tool calls</h3>
+          <p>A <code>tool.call</code> hook can deny an edit to a protected file, tidy a Bash command before it runs, or react to the result.</p>
+        </article>
+        <article class="card">
+          <h3>Prompt changes</h3>
+          <p><code>prompt.submit</code> rewrites what you typed, and <code>prompt.compose</code> adds, replaces or drops a section of the system prompt.</p>
+        </article>
+        <article class="card">
+          <h3>Commands, tools and timers</h3>
+          <p>Register slash commands, give the model new tools or subagent types, run work on a timer, and read files or start processes through <code>$</code>.</p>
+        </article>
+      </div>
+      <p class="section-lede after-grid">The same mod draws in the terminal, the desktop app's Code tab, VS Code and mobile. A <code>ui.render</code> hook reads <code>e.surface</code> and gets that surface's elements, such as <code>Box</code>, <code>Text</code> and <code>Button</code>, from <code>$.ui.resolve(e)</code>.</p>
+    </section>
+
+    <section id="anatomy">
+      <h2>Anatomy of a mod</h2>
+      <p class="section-lede">A mod is a folder with three files. There's no build step: Claude Code loads the TypeScript directly.</p>
+<pre><code>protect-env/
+├── .claude-plugin/plugin.json   <span class="dim">name, version, description</span>
+└── hooks/
+    ├── hooks.json               <span class="dim">{ "modules": ["./register.ts"] }</span>
+    └── register.ts              <span class="dim">the hooks module</span></code></pre>
+
+      <h3 class="sub">A complete example</h3>
+      <p class="section-lede">This mod stops Claude from editing <code>.env</code> files and shows a status line entry when a Bash command fails.</p>
+<pre><code>import type { Register } from 'claude-code'
+
+const PROTECTED = /(^|\/)\.env(\.|$)/
+
+export const register: Register = on =&gt; {
+  on('tool.call', { tool: 'Edit' }, ($, e, next) =&gt;
+    PROTECTED.test(e.file_path)
+      ? { deny: `${$.plugin.name}: ${e.file_path} is protected here.` }
+      : next(e),
+  )
+
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) =&gt; {
+    const ran = await next({ ...e, command: e.command.trim() })
+    const failed = ran.deny === undefined &amp;&amp; ran.isError === true
+    $.ui.status(failed ? `failed: ${e.command.slice(0, 40)}` : undefined)
+    return ran
+  })
+}</code></pre>
+      <p class="caption"><code>hooks/register.ts</code></p>
+
+      <h3 class="sub">Things to know</h3>
+      <ul class="points">
+        <li><strong>It runs in its own sandbox.</strong> A hooks module has no DOM and no Node. It reaches files, processes, the network and the UI only through <code>$</code>.</li>
+        <li><strong>State survives a reload.</strong> Values kept in <code>$.state</code> (this session) and <code>$.store</code> (across sessions) belong to Claude Code and stay. The module's own variables start over each time it loads.</li>
+        <li><strong>A failing hook is skipped.</strong> Claude Code carries on without it and shows one dim line in the transcript naming the mod, the event and the reason.</li>
+        <li><strong><code>$</code> stays in the file that receives it.</strong> Claude Code reads a mod's code to learn what it can do, and it follows <code>$</code> only into functions in the same file. A mod split across files keeps its <code>$</code> calls in the entry file and hands the other files a small adapter instead.</li>
+        <li><strong>Atoms are read where they're declared.</strong> Each <code>read</code> or <code>update</code> of a session atom has to name an atom made in that same file.</li>
+        <li><strong>The types come with your build.</strong> Once a mod loads, <code>.claude-plugin/types/</code> holds the full API, the built-in tools' inputs and your connected MCP tools, so your editor and <code>tsc</code> check it.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2>Make and run one</h2>
+      <ol class="flow">
+        <li><strong>Ask Claude for one.</strong> Describe the pane, rule or command you want. Claude writes the mod and asks once whether to turn on hot reloading for the session.</li>
+        <li><strong>Or load a folder.</strong> <code>claude --plugin-dir ./my-mod</code> loads a mod for that session. Workbench is loaded this way.</li>
+        <li><strong>Edit and watch it reload.</strong> Saving a file reloads the mod. Edits Claude makes during a turn reload when the turn ends.</li>
+        <li><strong>Check it.</strong> <code>claude plugin validate</code> reports what the mod hooks and anything Claude Code would refuse. <code>claude plugin test</code> runs its <code>*.test.ts</code> files.</li>
+      </ol>
+<pre><code><span class="dim">$</span> claude plugin validate ./protect-env
+<span class="dim">$</span> claude plugin test ./protect-env
+<span class="dim">$</span> claude --plugin-dir ./protect-env</code></pre>
+      <p class="caption">Run with <code>claude --debug</code> to see every hook error and refused result in the debug log.</p>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>FAQ</h2>
+      <details>
+        <summary>How is a mod different from a settings hook or a skill?</summary>
+        <p>A settings hook runs a shell command at fixed points and passes data through stdin and stdout. A skill gives Claude instructions. A mod is code that runs inside Claude Code on every event it hooks, can draw interface, and can change an event before Claude Code acts on it. A mod can still react to the settings hooks' events, as <code>classic.Stop</code> or <code>classic.SessionEnd</code>.</p>
+      </details>
+      <details>
+        <summary>Do I need to write TypeScript?</summary>
+        <p>No. A hooks module can be TypeScript or JavaScript, and JSX works in both. TypeScript is worth it: the declarations that ship with Claude Code narrow each event, so <code>e.file_path</code> is known to exist on an <code>Edit</code> call.</p>
+      </details>
+      <details>
+        <summary>Can mods work together?</summary>
+        <p>Yes. Hooks from every loaded mod form a chain, each calling <code>next</code> to reach the ones beneath. A mod can also add its own noun to <code>$</code> and ship its types, and another mod that lists it under <code>dependencies</code> gets those types.</p>
+      </details>
+      <details>
+        <summary>Is it safe to run someone else's mod?</summary>
+        <p>Read it first. A mod can deny or rewrite tool calls, run processes and read files through <code>$</code>. Hot reloading only turns on when you say so, and an organization's policy or an untrusted workspace can keep it off.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="index.html">workbench</a> · a mod for Claude Code · see also <a href="architecture.html">how Workbench works</a></p>
+  </footer>
+</body>
+</html>

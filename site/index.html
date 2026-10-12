@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workbench</title>
+  <meta name="description" content="A Claude Code mod for working several features at once: agents in your session or in Workbench Web, one observer over all of them, and a local Laya model that judges the work against your standards.">
+  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fafbfd" media="(prefers-color-scheme: light)">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Workbench: work several features at once in Claude Code">
+  <meta property="og:description" content="A Claude Code mod: per-feature context, experiences, shared workflows, agents on two runners, and one observer that tells you when any of them needs you.">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c9cff'/%3E%3Cstop offset='1' stop-color='%23c084fc'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=0.4.0-1">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="nav">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>workbench</a>
+    <nav aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="mods.html">What are mods?</a>
+      <a class="btn btn-sm" href="#try">Try it</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <p class="eyebrow"><a href="mods.html">A Claude Code mod</a> · v0.6.0</p>
+      <h1>Work several features at once.</h1>
+      <p class="lede">Start an agent on every feature, in your Claude Code session or in Workbench Web. One observer tells you when any of them needs you, and a local model holds the work to your standards.</p>
+      <div class="cta">
+        <a class="btn" href="#try">Try it</a>
+        <a class="btn btn-ghost" href="architecture.html">See the architecture</a>
+      </div>
+
+      <div class="term" role="img" aria-label="The Workbench pane and status line showing five features on two runners">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="term-body">
+<pre><span class="dim">/workbench</span>
+
+  <span class="q">?</span>  Checkout redesign        <span class="dim">needs you · “Keep the old cart?”  · in session</span>
+  <span class="run">●</span>  Search ranking tweaks     <span class="dim">working · 4m  · web</span>
+  <span class="run">●</span>  Flaky auth test           <span class="dim">working · 1m  · in session</span>
+  <span class="ok">✓</span>  Onboarding copy           <span class="dim">your turn  · web</span>
+  <span class="dim">○</span>  Orders API v2             <span class="dim">◆ Laya suggests planning first</span>
+
+<span class="status">workbench  ? 1 needs your answer · ● 2 running</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <h2>How it works</h2>
+      <ol class="flow">
+        <li><strong>Describe the work.</strong> A feature is a JSON file in <code>.claude/features/</code>, shared through git, with its own context: files, commands, URLs, notes, MCP calls. Or pull one from a Jira story or a GitHub issue.</li>
+        <li><strong>Start agents.</strong> Each runs where its feature says: as a subagent of your session, or as a Workbench Web session you can also follow in the browser.</li>
+        <li><strong>Answer when asked.</strong> Questions and plans reach you in the pane, the status line and a notification; <code>n</code> takes you to the next one.</li>
+        <li><strong>Let Laya check the work.</strong> Plan first or just do it, edits against your standards, plans, and claims at the end of a turn. <a href="architecture.html#lifecycle">See the lifecycle</a></li>
+      </ol>
+    </section>
+
+    <section id="features" class="features">
+      <h2>What's in the box</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Features and experiences</h3>
+          <p>Units of work next to your code, grouped into experiences whose shared context reaches every brief. Pull them from Jira epics and stories or GitHub issues. <a href="architecture.html#remotes">Remotes</a></p>
+        </article>
+        <article class="card">
+          <h3>Two runners</h3>
+          <p>In your session for quick work, nothing else to start. In Workbench Web for longer work that outlives your terminal and can plan first.</p>
+        </article>
+        <article class="card">
+          <h3>One observer</h3>
+          <p>Hooks hear your session's agents, a poll hears Workbench Web's. One list, one status line, one set of notifications.</p>
+        </article>
+        <article class="card">
+          <h3>Decisions with Laya</h3>
+          <p>A local decision model judges the work at each stage and sends problems back to Claude with what to fix. Shadow mode first. <a href="architecture.html#laya">Turn it on</a></p>
+        </article>
+        <article class="card">
+          <h3>Plan first</h3>
+          <p>Per experience, per feature, or as Laya suggests: the agent plans, you approve the plan card, and it builds in your usual mode.</p>
+        </article>
+        <article class="card">
+          <h3>In the browser</h3>
+          <p>Workbench Web shows the same sessions as the pane, with full transcripts and cards. Start in one, answer in the other.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="try" class="install">
+      <h2>Try it</h2>
+<pre><code><span class="dim">$</span> ./setup.sh                        <span class="dim"># Node 20+, Claude Code; add --laya for decisions</span>
+<span class="dim">$</span> node workbench-web/server.mjs .   <span class="dim"># http://localhost:4477, these docs at /docs/</span>
+<span class="dim">$</span> claude --plugin-dir ./workbench   <span class="dim"># in a second terminal</span>
+
+/workbench                          <span class="dim"># the pane: n, s, o, p, r, w</span>
+/feature new Checkout redesign
+/ctx add file src/checkout/Cart.tsx
+/feature start</code></pre>
+      <p class="caption">Or open the browser's <strong>Remote</strong> tab and pull a mock Jira story or GitHub issue. Commands: <code>/workbench</code>, <code>/feature</code>, <code>/experience</code>, <code>/ctx</code>, <code>/workflow</code>; each prints its usage with no arguments. Tested against Claude Code v2.1.296.</p>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>FAQ</h2>
+      <details>
+        <summary>Where is agent state kept?</summary>
+        <p>Never in the feature files, so a commit never carries one person's run status. In-session agents live and end with your Claude Code session; Workbench Web sessions are saved per user and resume after a restart.</p>
+      </details>
+      <details>
+        <summary>Does Laya send my code anywhere?</summary>
+        <p>No. It runs inside Workbench Web on your machine, with no key. Pointing Workbench at TypeSafe's hosted Jev instead does send what it judges to that service.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <p>workbench v0.6.0 · by ldadams · a mod for Claude Code · <a href="architecture.html">Architecture</a> · <a href="mods.html">What are mods?</a></p>
+  </footer>
+</body>
+</html>

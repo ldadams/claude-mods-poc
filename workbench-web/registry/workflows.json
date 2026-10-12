@@ -1,0 +1,48 @@
+{
+  "$comment": "Workflows available to every feature. A project can add or override entries in <project>/.claude/workbench-workflows.json (same shape, matched by id). kind 'prompt' sends the template to the feature's Claude session; kind 'script' runs the command in the project folder and shows the output. Templates can use {{feature.title}}, {{feature.id}}, {{feature.description}}, {{remote.url}}.",
+  "workflows": [
+    {
+      "id": "plan",
+      "name": "Plan it",
+      "kind": "prompt",
+      "description": "Read the code and propose a step-by-step plan before changing anything.",
+      "mode": "plan",
+      "template": "Before changing anything, read the relevant code and propose a step-by-step plan for \"{{feature.title}}\". List the files you would touch, the risks, and how we'll know it works. Ask me anything you need decided."
+    },
+    {
+      "id": "review",
+      "name": "Review changes",
+      "kind": "prompt",
+      "description": "Review the uncommitted changes for bugs, then summarize them.",
+      "template": "Review the uncommitted changes in this project for \"{{feature.title}}\". Look for correctness bugs first, then anything confusing or untested. Report findings most severe first with file:line. Don't fix anything yet."
+    },
+    {
+      "id": "tests",
+      "name": "Write tests",
+      "kind": "prompt",
+      "description": "Add or extend tests covering this feature's behavior and run them.",
+      "template": "Write tests that cover the behavior added for \"{{feature.title}}\". Follow the project's existing test setup; if there is none, propose the lightest one and ask before adding dependencies. Run them and report the results."
+    },
+    {
+      "id": "pr-description",
+      "name": "Draft PR description",
+      "kind": "prompt",
+      "description": "Summarize the work so far as a pull request description.",
+      "template": "Draft a pull request description for \"{{feature.title}}\" from the changes so far: what changed, why, how it was tested, and anything reviewers should look at closely. Link {{remote.url}} if it is set. Output Markdown only; don't create the PR."
+    },
+    {
+      "id": "git-status",
+      "name": "Git status",
+      "kind": "script",
+      "description": "Show the working tree status and the last few commits.",
+      "command": "git status --short --branch 2>&1 && echo && git log --oneline -5 2>&1"
+    },
+    {
+      "id": "run-tests",
+      "name": "Run tests",
+      "kind": "script",
+      "description": "Run npm test if the project defines one.",
+      "command": "if [ -f package.json ]; then npm test --if-present 2>&1; else echo 'No package.json in this project.'; fi"
+    }
+  ]
+}

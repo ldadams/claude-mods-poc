@@ -1,0 +1,7 @@
+{
+  "decisions": {
+    "$comment": "Laya, a local decision model. Off by default (provider \"off\") because its first start downloads about 1.6 GB. ./setup.sh --laya downloads it and sets provider to \"laya\". Shadow mode shows its judgments without acting on them. See README.md.",
+    "provider": "off",
+    "mode": "shadow"
+  }
+}

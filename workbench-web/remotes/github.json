@@ -1,0 +1,52 @@
+{
+  "$comment": "A mock GitHub repository's issues, in the shape the GitHub REST API returns, so you can try pulling without a token. An issue with sub-issues (their `parent` is its number) is pulled like an epic. A real repository returns the same shape from the github reader in server.mjs.",
+  "kind": "github",
+  "name": "GitHub",
+  "repo": "example/workbench",
+  "issues": [
+    {
+      "number": 41,
+      "title": "Notify me when a feature needs me",
+      "body": "When a session is waiting on a question or a permission and the Workbench tab is in the background, I miss it for minutes.\n\nTrack the pieces in the sub-issues.",
+      "state": "open",
+      "labels": [{ "name": "workbench-web" }, { "name": "enhancement" }]
+    },
+    {
+      "number": 42,
+      "parent": 41,
+      "title": "Show the needs-you count in the browser tab title",
+      "body": "Prefix the page title with the number of features waiting on you, like `(2) Workbench`.\n\n- [ ] Updates as soon as a session changes state.\n- [ ] No prefix when nothing is waiting.",
+      "state": "open",
+      "labels": [{ "name": "workbench-web" }]
+    },
+    {
+      "number": 43,
+      "parent": 41,
+      "title": "Desktop notification when a session asks a question",
+      "body": "Use the Notification API, asking for permission the first time the user opens a feature. One notification per question, naming the feature.\n\n- [ ] Clicking it focuses the tab and opens the feature.\n- [ ] Nothing is sent while the tab is focused.",
+      "state": "open",
+      "labels": [{ "name": "workbench-web" }]
+    },
+    {
+      "number": 47,
+      "title": "Site: architecture page diagram is cut off on phones",
+      "body": "On a 390px-wide screen the lifecycle diagram in site/architecture.html overflows and the page scrolls sideways. It should scale down or scroll inside its own box.",
+      "state": "open",
+      "labels": [{ "name": "site" }, { "name": "bug" }]
+    },
+    {
+      "number": 52,
+      "title": "README: document the GraphQL mutations",
+      "body": "workbench-web/README.md lists the queries but only names the mutations. Add one example per mutation group (features, sessions, remote).",
+      "state": "open",
+      "labels": [{ "name": "docs" }]
+    },
+    {
+      "number": 38,
+      "title": "Pane: show the session's cost on the feature row",
+      "body": "Already in the browser; the Workbench pane should show it too.",
+      "state": "closed",
+      "labels": [{ "name": "workbench" }]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "description": "Workbench hooks module: Features, Context providers, and Workflows",
+  "modules": ["./register.js"]
+}

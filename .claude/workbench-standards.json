@@ -1,0 +1,17 @@
+{
+  "rules": [
+    {
+      "id": "site-plain-html",
+      "tools": ["Write", "Edit", "MultiEdit"],
+      "field": "file_path",
+      "match": "(^|/)site/",
+      "unless": "\\.(html|css|md|svg|png|jpg|webp|ico)$",
+      "message": "site/ is plain HTML and CSS with no build step. Put this in an .html or .css file instead."
+    }
+  ],
+  "judged": [
+    { "id": "site-no-frameworks", "text": "site/ stays plain HTML and CSS: no frameworks, bundlers, or script tags that load them.", "appliesTo": ["edit", "plan"] },
+    { "id": "web-one-dependency", "text": "workbench-web/ adds no packages, with any package manager or by editing package.json, without the user's sign-off.", "appliesTo": ["edit", "command", "plan"] },
+    { "id": "no-credentials", "text": "No credentials, tokens or private keys in files, in any format.", "appliesTo": ["edit"] }
+  ]
+}
